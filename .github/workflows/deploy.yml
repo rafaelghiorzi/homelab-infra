@@ -16,7 +16,7 @@ jobs:
           echo "matrix=${STACKS}" >> $GITHUB_OUTPUT
 
   deploy:
-    needs: list-stacks
+    needs: list-apps
     runs-on: self-hosted
     strategy:
       matrix:
