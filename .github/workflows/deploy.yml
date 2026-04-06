@@ -16,6 +16,7 @@ jobs:
           rsync -rtv --delete ./ /opt/homelab/repo/
 
   deploy:
+    runs-on: self-hosted
     needs: setup-and-sync
     steps:
       - name: Deploy Nginx
