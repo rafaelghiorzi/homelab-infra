@@ -11,7 +11,7 @@ ingress:
   - hostname: nginx.rafaelghiorzi.org
     service: http://192.168.0.185:8000
 
-  - hostname: dashboard.rafaelghiorzi.org
-    service: http://192.168.0.185:3000
+  - hostname: flask.rafaelghiorzi.org
+    service: http://192.168.0.185:5001
 
   - service: http_status:404

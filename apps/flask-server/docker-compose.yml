@@ -1,0 +1,8 @@
+services:
+  flask-app:
+    image: ghcr.io/rafaelghiorzi/flask-app:latest
+    container_name: flask-app
+
+    restart: unless-stopped
+    ports:
+      - "5001:5000"

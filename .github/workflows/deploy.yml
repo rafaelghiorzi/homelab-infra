@@ -60,3 +60,11 @@ jobs:
           echo "Deploying Nginx"
           docker compose \
             -f /opt/homelab/repo/apps/nginx/docker-compose.yml \
+            up -d
+
+      - name: Deploy Flask App
+        run: |
+          echo "Deploying Flask App"
+          docker compose \
+            -f /opt/homelab/repo/apps/flask-app/docker-compose.yml \
+            up -d
