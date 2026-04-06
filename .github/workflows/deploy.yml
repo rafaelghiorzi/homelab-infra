@@ -6,54 +6,19 @@ on:
 jobs:
   setup-and-sync:
     runs-on: self-hosted
-    outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Sync Files to /opt/homelab/repo
         run: |
-          # 1. Garante que a pasta existe e sincroniza TUDO primeiro
           mkdir -p /opt/homelab/repo
           rsync -rtv --delete ./ /opt/homelab/repo/
 
-      - name: Update Cloudflare Tunnel
-        run: |
-          # 2. Reinicia o túnel para ler o config.yml que acabou de chegar
-          sudo systemctl restart cloudflared
-          
-          # 3. Garante rotas de DNS para novos hostnames
-          CONFIG_PATH="/opt/homelab/repo/networking/cloudflare/config.yml"
-          if [ -f "$CONFIG_PATH" ]; then
-            # Extrai os hostnames e cria as rotas no Cloudflare
-            HOSTNAMES=$(grep "hostname:" "$CONFIG_PATH" | awk '{print $2}')
-            for HOST in $HOSTNAMES; do
-              echo "Certificando DNS para: $HOST"
-              # Substitua 'homelab-tunnel' pelo nome real do seu túnel se for diferente
-              cloudflared tunnel route dns homelab-tunnel $HOST || true
-            done
-          fi
-
-      - id: set-matrix
-        name: Generate Deployment Matrix
-        run: |
-          # 4. Varre o repo recém-sincronizado em busca de novos Docker Composes
-          # Ignoramos a pasta do cloudflare porque o túnel já é nativo
-          cd /opt/homelab/repo
-          STACKS=$(find . -maxdepth 3 -name "docker-compose.yml" -printf '%h\n' | sed 's|./||' | grep -v "networking/cloudflare" | jq -R -s -c 'split("\n")[:-1]')
-          echo "matrix=${STACKS}" >> $GITHUB_OUTPUT
-
   deploy:
     needs: setup-and-sync
-    if: ${{ needs.setup-and-sync.outputs.matrix != '[]' && needs.setup-and-sync.outputs.matrix != '' }}
-    runs-on: self-hosted
-    strategy:
-      matrix:
-        stack: ${{ fromJson(needs.setup-and-sync.outputs.matrix) }}
     steps:
-      - name: Deploy ${{ matrix.stack }}
+      - name: Deploy Nginx
         run: |
-          COMPOSE_FILE="/opt/homelab/repo/${{ matrix.stack }}/docker-compose.yml"
-          echo "🚀 Deploying stack: ${{ matrix.stack }}"
-          docker compose -f "$COMPOSE_FILE" up -d --remove-orphans
+          echo "Deploying Nginx"
+          docker compose -f /opt/homelab/repo/apps/nginx/docker-compose.yml up -d
