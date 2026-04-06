@@ -1,0 +1,21 @@
+name: Homelab Sync
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Sync Files to /opt/homelab/repo
+        run: |
+          echo "Time to sync the homelab repo"
+          rsync -rtv --delete ./ /opt/homelab/repo/
+
+      - name: Test Docker
+        run: |
+          echo "Sync concluído com sucesso em $(date)"
+          docker --version
