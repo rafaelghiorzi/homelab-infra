@@ -4,20 +4,40 @@ on:
     branches: [ main ]
 
 jobs:
-  setup-and-sync:
+  sync-files:
     runs-on: self-hosted
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Sync Files to /opt/homelab/repo
+      - name: Sync Files
         run: |
           mkdir -p /opt/homelab/repo
           rsync -rtv --delete ./ /opt/homelab/repo/
 
+  sync-cloudflare:
+    runs-on: self-hosted
+    needs: sync-files
+    steps:
+      - name: Register Cloudflare DNS Routes
+        run: |
+          echo "Lendo hostnames do config.yml..."
+          CONFIG_PATH="/opt/homelab/repo/cloudflare/config.yml"
+
+          grep "hostname:" $CONFIG_PATH | sed 's/.*hostname: //' | while read -r domain; do
+            if [ -n "$domain" ]; then
+              echo "Verificando rota para: $domain"
+              cloudflared tunnel route dns homelab-tunnel "$domain" || echo "Aviso: Rota $domain não pôde ser criada (pode já existir)."
+            fi
+          done
+
+      - name: Restart cloudflared service
+        run: sudo systemctl restart cloudflared
+
+
   deploy:
     runs-on: self-hosted
-    needs: setup-and-sync
+    needs: sync-cloudflare
     steps:
       - name: Deploy Immich
         run: |
@@ -33,4 +53,11 @@ jobs:
           docker compose \
             -f /opt/homelab/repo/apps/nextcloud/docker-compose.yml \
             --env-file /opt/homelab/secrets/.env \
+            up -d
+
+      - name: Deploy Nginx
+        run: |
+          echo "Deploying Nginx"
+          docker compose \
+            -f /opt/homelab/repo/apps/nginx/docker-compose.yml \
             up -d
