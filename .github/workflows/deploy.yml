@@ -31,10 +31,6 @@ jobs:
             fi
           done
 
-      - name: Restart cloudflared service
-        run: sudo systemctl restart cloudflared
-
-
   deploy:
     runs-on: self-hosted
     needs: sync-cloudflare
