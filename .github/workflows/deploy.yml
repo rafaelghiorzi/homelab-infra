@@ -26,3 +26,11 @@ jobs:
             -f /opt/homelab/repo/apps/immich/docker-compose.yml \
             --env-file /opt/homelab/secrets/.env \
             up -d
+
+      - name: Deploy NextCloud
+        run: |
+          echo "Deploying NextCloud"
+          docker compose \
+            -f /opt/homelab/repo/apps/nextcloud/docker-compose.yml \
+            --env-file /opt/homelab/secrets/.env \
+            up -d

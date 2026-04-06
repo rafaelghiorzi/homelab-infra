@@ -1,0 +1,42 @@
+services:
+  db:
+    image: postgres:alpine
+    restart: unless-stopped
+    volumes:
+      - ${POSTGRES_DATA}:/var/lib/postgresql
+    environment:
+      - PGDATA=/var/lib/postgresql/data
+    env_file:
+      - /opt/homelab/secrets/.env
+
+  redis:
+    image: redis:alpine
+    restart: unless-stopped
+
+  app:
+    image: nextcloud:apache
+    restart: unless-stopped
+    ports:
+      - 8080:80
+    volumes:
+      - nextcloud_app:/var/www/html
+      - ${NEXTCLOUD_DATA}:/var/www/html/data
+    environment:
+      - POSTGRES_HOST=db
+      - REDIS_HOST=redis
+    env_file:
+      - /opt/homelab/secrets/.env
+    depends_on:
+      - db
+      - redis
+
+  cron:
+    image: nextcloud:apache
+    restart: unless-stopped
+    volumes:
+      - nextcloud_app:/var/www/html
+      - ${NEXTCLOUD_DATA}:/var/www/html/data
+    entrypoint: /cron.sh
+    depends_on:
+      - db
+      - redis

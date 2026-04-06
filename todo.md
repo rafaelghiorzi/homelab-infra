@@ -50,5 +50,4 @@ meu-homelab-git/ (O REPOSITÓRIO)
 └── scripts/            # Seus scripts de automação/backup
 
 
-
-docker run cloudflare/cloudflared:latest tunnel --no-autoupdate run --token eyJhIjoiMzM2ZDk1NThlY2M5OTlhYzk1ZmZmODdkMmEzMzU4NTgiLCJ0IjoiNmViNzk0NmYtYzA1ZS00ZTJjLTlhNjUtYzkxYWI0ZmNkZjZkIiwicyI6Ik5qWTRabVV4WmpNdFltSTFPUzAwTnpVNUxUaGhaREF0TldZd09EY3hOakF3WkRrNCJ9
+bash`sudo cloudflared service install` faz com que o tunnel esteja sempre ligado
