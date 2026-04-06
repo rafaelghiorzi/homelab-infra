@@ -1,4 +1,4 @@
-tunnel: 6eb7946f-c05e-4e2c-9a65-c91ab4fcdf6d
+tunnel: 3df0843e-4f2c-4ea1-8c6a-175aa904c6c8
 credentials-file: /opt/homelab/secrets/tunnel-credentials.json
 
 ingress:
