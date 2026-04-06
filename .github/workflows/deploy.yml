@@ -11,16 +11,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - id: set-matrix
-        run:
-          STACKS=$(find apps monitoring networking -name "docker-compose.yml" -printf '%h\n' | jq -R -s -c 'split("\n")[:-1]')
-          echo "matrix=${STACKS}" >> $GITHUB_OUTPUT
+        run: |
+          # 1. Busca pastas com compose, filtrando apenas as que existem para não dar erro
+          # 2. Se não achar nada, retorna um array vazio [] para não quebrar o fromJson
+          STACKS=$(find . -maxdepth 3 -name "docker-compose.yml" -printf '%h\n' | sed 's|./||' | jq -R -s -c 'split("\n")[:-1]')
+          if [ -z "$STACKS" ] || [ "$STACKS" == "[]" ]; then
+            echo "matrix=[]" >> $GITHUB_OUTPUT
+          else
+            echo "matrix=${STACKS}" >> $GITHUB_OUTPUT
+          fi
 
   deploy:
     needs: list-apps
+    # Só roda se a matriz não estiver vazia
+    if: ${{ needs.list-apps.outputs.matrix != '[]' && needs.list-apps.outputs.matrix != '' }}
     runs-on: self-hosted
     strategy:
       matrix:
-        stack: ${{ fromJson(needs.list-stacks.outputs.matrix) }}
+        stack: ${{ fromJson(needs.list-apps.outputs.matrix) }} # Corrigido para list-apps
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -30,9 +38,12 @@ jobs:
 
       - name: Deploy ${{ matrix.stack }}
         run: |
-          COMPOSE_FILE="/opt/homelab/repo/apps/${{ matrix.stack }}/docker-compose.yml"
+          # O matrix.stack já contém 'apps/teste' ou 'monitoring/grafana'
+          COMPOSE_FILE="/opt/homelab/repo/${{ matrix.stack }}/docker-compose.yml"
+          
+          echo "🚀 Iniciando deploy em: $COMPOSE_FILE"
           if [ -f "$COMPOSE_FILE" ]; then
             docker compose -f "$COMPOSE_FILE" up -d
           else
-            echo "Aviso: $COMPOSE_FILE não encontrado, pulando..."
+            echo "❌ Erro: Arquivo não encontrado!" && exit 1
           fi
