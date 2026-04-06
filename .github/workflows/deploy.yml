@@ -36,6 +36,18 @@ jobs:
       - name: Sync Files to /opt/homelab/repo
         run: rsync -rtv --delete ./ /opt/homelab/repo/
 
+      - name: Restart Cloudflare Tunnel
+        run: |
+          # Reinicia o serviço para aplicar mudanças no config.yml
+          sudo systemctl restart cloudflared
+          
+          # Garante que os novos domínios tenham entrada no DNS da Cloudflare
+          # (Isso só precisa rodar se você adicionou um hostname novo no YAML)
+          HOSTNAMES=$(grep "hostname:" /opt/homelab/repo/networking/cloudflare/config.yml | awk '{print $2}')
+          for HOST in $HOSTNAMES; do
+            cloudflared tunnel route dns homelab-tunnel $HOST || true
+          done
+
       - name: Deploy ${{ matrix.stack }}
         run: |
           # O matrix.stack já contém 'apps/teste' ou 'monitoring/grafana'

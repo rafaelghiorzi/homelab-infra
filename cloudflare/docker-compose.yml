@@ -1,6 +1,6 @@
 services:
   tunnel:
-    image: cloudflared/cloudflared:latest
+    image: cloudflare/cloudflared:latest
     container_name: cloudflare_tunnel
     restart: always
     env_file:

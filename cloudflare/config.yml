@@ -1,4 +1,5 @@
 tunnel: 6eb7946f-c05e-4e2c-9a65-c91ab4fcdf6d
+credentials-file: /opt/homelab/secrets/tunnel-credentials.json
 
 ingress:
   - hostname: fotos.rafaelghiorzi.org
