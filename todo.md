@@ -38,8 +38,8 @@ instalar o runner do GitHub para push automático
 │   ├── immich/
 │   ├── nextcloud/
 │   └── grafana_db/
-├── secrets/            # <--- Chaves de API e senhas (fora do Git)
-└── .github-runner/     # <--- O binário que faz a mágica acontecer
+├── secrets/          
+└── .env/     
 
 
 meu-homelab-git/ (O REPOSITÓRIO)

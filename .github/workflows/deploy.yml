@@ -60,4 +60,11 @@ jobs:
           echo "Deploying Nginx"
           docker compose \
             -f /opt/homelab/repo/apps/nginx/docker-compose.yml \
+            
+      - name: Deploy Monitoring (LGTM)
+        run: |
+          echo "Deploying LGTM monitoring stack"
+          docker compose \
+            -f /opt/homelab/repo/monitoring/docker-compose.yml \
+            --env-file /opt/homelab/secrets/.env \
             up -d
