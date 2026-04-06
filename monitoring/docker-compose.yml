@@ -59,8 +59,6 @@ services:
       - /:/host:ro,rslave
     command:
       - '--path.rootfs=/host'
-    networks:
-      - monitoring
 
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:latest
@@ -73,7 +71,7 @@ services:
       - /var/lib/docker/:/var/lib/docker:ro
     networks:
       - monitoring
-      
+
 networks:
   monitoring:
     driver: bridge
