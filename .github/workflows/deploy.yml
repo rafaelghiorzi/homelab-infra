@@ -22,4 +22,7 @@ jobs:
       - name: Deploy Immich
         run: |
           echo "Deploying Immich"
-          docker compose -f /opt/homelab/repo/apps/immich/docker-compose.yml up -d
+          docker compose \
+            -f /opt/homelab/repo/apps/immich/docker-compose.yml \
+            --env-file /opt/homelab/secrets/.env \
+            up -d
