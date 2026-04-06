@@ -4,18 +4,35 @@ on:
     branches: [ main ]
 
 jobs:
-  deploy:
+  list-apps:
     runs-on: self-hosted
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: set-matrix
+        run:
+          STACKS=$(find apps monitoring networking -name "docker-compose.yml" -printf '%h\n' | jq -R -s -c 'split("\n")[:-1]')
+          echo "matrix=${STACKS}" >> $GITHUB_OUTPUT
+
+  deploy:
+    needs: list-stacks
+    runs-on: self-hosted
+    strategy:
+      matrix:
+        stack: ${{ fromJson(needs.list-stacks.outputs.matrix) }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Sync Files to /opt/homelab/repo
-        run: |
-          echo "Time to sync the homelab repo"
-          rsync -rtv --delete ./ /opt/homelab/repo/
+        run: rsync -rtv --delete ./ /opt/homelab/repo/
 
-      - name: Test Docker
+      - name: Deploy ${{ matrix.stack }}
         run: |
-          echo "Sync concluído com sucesso em $(date)"
-          docker compose -f /opt/homelab/repo/stacks/test/docker-compose.yml up -d
+          COMPOSE_FILE="/opt/homelab/repo/apps/${{ matrix.stack }}/docker-compose.yml"
+          if [ -f "$COMPOSE_FILE" ]; then
+            docker compose -f "$COMPOSE_FILE" up -d
+          else
+            echo "Aviso: $COMPOSE_FILE não encontrado, pulando..."
+          fi

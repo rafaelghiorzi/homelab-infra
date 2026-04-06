@@ -1,0 +1,10 @@
+tunnel: 6eb7946f-c05e-4e2c-9a65-c91ab4fcdf6d
+
+ingress:
+  - hostname: fotos.rafaelghiorzi.org
+    service: http://192.168.0.185:2283
+
+  - hostname: drive.rafaelghiorzi.org
+    service: http://192.168.0.185:8080
+
+  - service: http_status:404

@@ -1,0 +1,8 @@
+services:
+  tunnel:
+    image: cloudflared/cloudflared:latest
+    container_name: cloudflare_tunnel
+    restart: always
+    env_file:
+      - /opt/homelab/secrets/cloudflare.env
+    command: tunnel run
