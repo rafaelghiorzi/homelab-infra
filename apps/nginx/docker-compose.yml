@@ -1,6 +1,0 @@
-services:
-  hello-world:
-    image: nginx:alpine
-    container_name: test_nginx
-    ports:
-      - "8080:80"

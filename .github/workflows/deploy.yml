@@ -19,7 +19,7 @@ jobs:
     runs-on: self-hosted
     needs: setup-and-sync
     steps:
-      - name: Deploy Nginx
+      - name: Deploy Immich
         run: |
-          echo "Deploying Nginx"
-          docker compose -f /opt/homelab/repo/apps/nginx/docker-compose.yml up -d
+          echo "Deploying Immich"
+          docker compose -f /opt/homelab/repo/apps/immich/docker-compose.yml up -d
