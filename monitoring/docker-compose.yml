@@ -1,64 +1,69 @@
 services:
   prometheus:
     image: prom/prometheus
-    container_name: prometheus
     volumes:
       - /opt/homelab/repo/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
       - /opt/homelab/data/prometheus:/prometheus
     ports:
       - "9090:9090"
+    networks:
+      - monitoring
 
   loki:
     image: grafana/loki:2.9.0
-    container_name: loki
     volumes:
       - /opt/homelab/repo/monitoring/loki-config.yml:/etc/loki/config.yml
       - /opt/homelab/data/loki:/loki
     command: -config.file=/etc/loki/config.yml
     ports:
       - "3100:3100"
+    networks:
+      - monitoring
 
   promtail:
     image: grafana/promtail:2.9.0
-    container_name: promtail
     volumes:
       - /var/log:/var/log
       - /opt/homelab/repo/monitoring/promtail-config.yml:/etc/promtail/config.yml
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
     command: -config.file=/etc/promtail/config.yml
+    networks:
+      - monitoring
 
   tempo:
     image: grafana/tempo:2.3.0
-    container_name: tempo
     volumes:
       - /opt/homelab/repo/monitoring/tempo.yml:/etc/tempo.yml
       - /opt/homelab/data/tempo:/tmp/tempo
     command: -config.file=/etc/tempo.yml
     ports:
       - "3200:3200"
+    networks:
+      - monitoring
 
   grafana:
     image: grafana/grafana:latest
-    container_name: grafana
     volumes:
       - /opt/homelab/data/grafana_db:/var/lib/grafana
       - /opt/homelab/repo/monitoring/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
     ports:
       - "3000:3000"
+    networks:
+      - monitoring
 
   node-exporter:
     image: prom/node-exporter
-    container_name: node-exporter
     network_mode: host
     pid: host
     volumes:
       - /:/host:ro,rslave
     command:
       - '--path.rootfs=/host'
+    networks:
+      - monitoring
 
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:latest
-    container_name: cadvisor
     ports:
       - "8081:8080"
     volumes:
@@ -66,3 +71,9 @@ services:
       - /var/run:/var/run:ro
       - /sys:/sys:ro
       - /var/lib/docker/:/var/lib/docker:ro
+    networks:
+      - monitoring
+      
+networks:
+  monitoring:
+    driver: bridge
