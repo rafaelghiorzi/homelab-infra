@@ -14,4 +14,7 @@ ingress:
   - hostname: flask.rafaelghiorzi.org
     service: http://192.168.0.185:5001
 
+  - hostname: monitoring.rafaelghiorzi.org
+    service: http://192.168.0.185:3000
+
   - service: http_status:404
