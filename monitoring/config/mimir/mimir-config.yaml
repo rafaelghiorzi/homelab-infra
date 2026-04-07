@@ -11,7 +11,7 @@ common:
       dir: /opt/homelab/data/monitoring/mimir
 
 blocks_storage:
-  storage_backend: filesystem
+  backend: filesystem
   filesystem:
     dir: /opt/homelab/data/monitoring/mimir/blocks
   tsdb:
@@ -22,22 +22,15 @@ compactor:
 
 distributor:
   ring:
-    instance_addr: 127.0.0.1
     kvstore:
       store: inmemory
 
 ingester:
   ring:
-    instance_addr: 127.0.0.1
     kvstore:
       store: inmemory
     replication_factor: 1
 
 ruler:
   rule_path: /opt/homelab/data/monitoring/mimir/rules
-  alertmanager_url: http://alertmanager:9093
-  external_url: http://mimir:9009
-  storage:
-    type: local
-    local:
-      directory: /opt/homelab/monitoring/config/mimir/rules
+  alertmanager_url: http://monitoring_alertmanager:9093

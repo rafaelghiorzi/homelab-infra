@@ -5,15 +5,8 @@ distributor:
   receivers:
     otlp:
       protocols:
-        http:
         grpc:
-
-ingester:
-  lifecycler:
-    ring:
-      kvstore:
-        store: inmemory
-      replication_factor: 1
+        http:
 
 storage:
   trace:
@@ -22,4 +15,6 @@ storage:
       path: /opt/homelab/data/monitoring/tempo/traces
 
 overrides:
-  metrics_generator_processors: [service-graphs, span-metrics]
+  defaults:
+    metrics_generator:
+      processors: [service-graphs, span-metrics]
