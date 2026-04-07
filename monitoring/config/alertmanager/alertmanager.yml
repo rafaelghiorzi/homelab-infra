@@ -29,23 +29,22 @@ route:
 receivers:
   - name: 'telegram'
     telegram_configs:
-      # Substitua pelos seus valores:
-      # BOT_TOKEN: obtenha em https://t.me/BotFather
-      # CHAT_ID: envie uma mensagem ao bot e pegue o ID
-      - bot_token: '123456789:ABCdefGHIjklmnoPQRstuvWXYzabcDEF'
+      - bot_token: '...'
         chat_id: 123456789
         api_url: 'https://api.telegram.org'
         send_resolved: true
-        title: '⚠️ {{ .GroupLabels.alertname }}'
+        parse_mode: Markdown
         message: |
+          ⚠️ {{ .GroupLabels.alertname }}
+
           {{ range .Alerts }}
-          **Status:** {{ .Status | toUpper }}
-          **Severity:** {{ .Labels.severity }}
-          **Service:** {{ .Labels.service | default "N/A" }}
-          **Instance:** {{ .Labels.instance | default .Labels.container | default "N/A" }}
-          
-          **Summary:** {{ .Annotations.summary }}
-          **Description:** {{ .Annotations.description }}
+          *Status:* {{ .Status | toUpper }}
+          *Severity:* {{ .Labels.severity }}
+          *Service:* {{ .Labels.service | default "N/A" }}
+          *Instance:* {{ .Labels.instance | default .Labels.container | default "N/A" }}
+
+          *Summary:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
           {{ end }}
 
 inhibit_rules:
