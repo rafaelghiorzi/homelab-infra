@@ -75,3 +75,12 @@ jobs:
           docker compose \
             -f /opt/homelab/repo/monitoring/docker-compose.yml \
             up -d
+
+
+  test:
+    runs-on: self-hosted
+    steps:
+      - name: Running test
+        run: |
+          echo "Running LGTM testing"
+          bash /opt/homelab/repo/monitoring/test.sh

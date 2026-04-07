@@ -1,12 +1,63 @@
 global:
   resolve_timeout: 5m
+  # Configuração global do Telegram - substitua com seu token e chat ID
+  telegram_api_url: 'https://api.telegram.org'
+
+# Templates para mensagens mais legíveis
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
 
 route:
-  group_by: ['alertname']
+  # Agrupa alertas com as mesmas labels
+  group_by: ['alertname', 'cluster', 'service']
   group_wait: 10s
   group_interval: 10s
-  repeat_interval: 1h
-  receiver: 'null'
+  repeat_interval: 4h
+  receiver: 'telegram'
+  
+  # Rotas específicas para diferentes severidades
+  routes:
+    - match:
+        severity: critical
+      receiver: 'telegram'
+      repeat_interval: 30m
+    - match:
+        severity: warning
+      receiver: 'telegram'
+      repeat_interval: 2h
 
 receivers:
-  - name: 'null'
+  - name: 'telegram'
+    telegram_configs:
+      # Substitua pelos seus valores:
+      # BOT_TOKEN: obtenha em https://t.me/BotFather
+      # CHAT_ID: envie uma mensagem ao bot e pegue o ID
+      - bot_token: '123456789:ABCdefGHIjklmnoPQRstuvWXYzabcDEF'
+        chat_id: 123456789
+        api_url: 'https://api.telegram.org'
+        send_resolved: true
+        title: '⚠️ {{ .GroupLabels.alertname }}'
+        message: |
+          {{ range .Alerts }}
+          **Status:** {{ .Status | toUpper }}
+          **Severity:** {{ .Labels.severity }}
+          **Service:** {{ .Labels.service | default "N/A" }}
+          **Instance:** {{ .Labels.instance | default .Labels.container | default "N/A" }}
+          
+          **Summary:** {{ .Annotations.summary }}
+          **Description:** {{ .Annotations.description }}
+          {{ end }}
+
+inhibit_rules:
+  # Não enviar alertas de warning se já há crítico do mesmo serviço
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'service']
+  # Não alertar sobre container down se já alertou sobre memory
+  - source_match:
+      alertname: 'ContainerKilled'
+    target_match:
+      alertname: 'ContainerHighMemoryUsage'
+    equal: ['name']

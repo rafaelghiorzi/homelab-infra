@@ -1,20 +1,40 @@
 server:
   http_listen_port: 3200
+  grpc_listen_port: 4317
+  log_level: info
+
+multitenancy_enabled: false
 
 distributor:
+  rate_limit_bytes: 104857600  # 100MB
+  rate_limit_enabled: true
   receivers:
     otlp:
       protocols:
         grpc:
+          endpoint: 0.0.0.0:4317
         http:
+          endpoint: 0.0.0.0:4318
+    jaeger:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:14250
+        thrift_http:
+          endpoint: 0.0.0.0:14268
 
 storage:
   trace:
     backend: local
     local:
-      path: /opt/homelab/data/monitoring/tempo/traces
+      path: /var/tempo/traces
+  blocklist_poll: 5m
 
-overrides:
-  defaults:
-    metrics_generator:
-      processors: [service-graphs, span-metrics]
+querier:
+  max_concurrent_queries: 10
+
+metrics_generator:
+  storage:
+    path: /var/tempo/generator
+  metrics_per_trace:
+    enabled: true
+    max_uncommon_names: 100

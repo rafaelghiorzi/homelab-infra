@@ -1,60 +1,270 @@
 groups:
+  # ===================================================================
+  # HOST ALERTS - Monitoramento da VM/Host
+  # ===================================================================
   - name: HostAlerts
+    interval: 30s
     rules:
       - alert: HostHighCpuUsage
-        expr: 100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        expr: |
+          (1 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])))) * 100 > 80
         for: 5m
         labels:
           severity: warning
+          service: "host"
         annotations:
-          summary: "Host high CPU usage (instance {{ $labels.instance }})"
-          description: "CPU usage is > 80%\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+          summary: "⚠️ Host CPU acima de 80% ({{ $labels.instance }})"
+          description: |
+            CPU Usage: {{ $value | humanize }}%
+            Verificar processos em background
 
-      - alert: HostHighMemoryUsage
-        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100 > 80
-        for: 5m
-        labels:
-          severity: warning
-        annotations:
-          summary: "Host high memory usage (instance {{ $labels.instance }})"
-          description: "Memory usage is > 80%\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
-
-  - name: ContainerAlerts
-    rules:
-      - alert: ContainerKilled
-        expr: time() - container_last_seen > 60
-        for: 0m
+      - alert: HostCriticalCpuUsage
+        expr: |
+          (1 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])))) * 100 > 95
+        for: 2m
         labels:
           severity: critical
+          service: "host"
         annotations:
-          summary: "Container killed (container {{ $labels.name }})"
-          description: "A container has disappeared\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+          summary: "🔴 Host CPU CRÍTICO acima de 95% ({{ $labels.instance }})"
+          description: |
+            CPU Usage: {{ $value | humanize }}%
+            AÇÃO IMEDIATA NECESSÁRIA
+
+      - alert: HostHighMemoryUsage
+        expr: |
+          (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: "host"
+        annotations:
+          summary: "⚠️ Host Memória acima de 80% ({{ $labels.instance }})"
+          description: |
+            Memory Usage: {{ $value | humanize }}%
+            Memória Total: {{ (node_memory_MemTotal_bytes / 1024 / 1024 / 1024) | humanize }}GB
+            Memória Disponível: {{ (node_memory_MemAvailable_bytes / 1024 / 1024 / 1024) | humanize }}GB
+
+      - alert: HostCriticalMemoryUsage
+        expr: |
+          (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 95
+        for: 2m
+        labels:
+          severity: critical
+          service: "host"
+        annotations:
+          summary: "🔴 Host Memória CRÍTICA acima de 95% ({{ $labels.instance }})"
+          description: |
+            Memory Usage: {{ $value | humanize }}%
+            AÇÃO IMEDIATA NECESSÁRIA - Possível OOM killer
+
+      - alert: HostHighDiskUsage
+        expr: |
+          (1 - (node_filesystem_avail_bytes{fstype!~"tmpfs|fuse.linsysfs|squashfs"} / node_filesystem_size_bytes{fstype!~"tmpfs|fuse.linsysfs|squashfs"})) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          service: "host"
+        annotations:
+          summary: "⚠️ Host Disco acima de 85% ({{ $labels.device }})"
+          description: |
+            Disk Usage: {{ $value | humanize }}%
+            Dispositivo: {{ $labels.device }}
+            Mount: {{ $labels.mountpoint }}
+
+      - alert: HostDiskRunningOutOfSpace
+        expr: |
+          node_filesystem_avail_bytes{fstype!~"tmpfs|fuse.linsysfs|squashfs"} / node_filesystem_size_bytes{fstype!~"tmpfs|fuse.linsysfs|squashfs"} < 0.05
+        for: 2m
+        labels:
+          severity: critical
+          service: "host"
+        annotations:
+          summary: "🔴 Host DISCO CRÍTICO - menos de 5% livre"
+          description: |
+            Dispositivo: {{ $labels.device }}
+            Espaço livre: {{ (node_filesystem_avail_bytes{device=~"{{ $labels.device }}"} / 1024 / 1024 / 1024) | humanize }}GB
+            AÇÃO IMEDIATA - Limpar ou expandir disco
+
+  # ===================================================================
+  # CONTAINER ALERTS - Monitoramento de containers individuais
+  # ===================================================================
+  - name: ContainerAlerts
+    interval: 30s
+    rules:
+      - alert: ContainerDown
+        expr: |
+          up{job="cadvisor"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: "{{ $labels.name }}"
+        annotations:
+          summary: "🔴 Container DOWN - {{ $labels.name }}"
+          description: |
+            Container: {{ $labels.name }}
+            Status: Não respondendo
+            Container pode ter crashado ou sido removido
 
       - alert: ContainerHighCpuUsage
-        expr: sum by (name) (rate(container_cpu_usage_seconds_total{name!=""}[5m])) * 100 > 80
+        expr: |
+          (sum by (name) (rate(container_cpu_usage_seconds_total{name!=""}[5m])) * 100) > 80
         for: 5m
         labels:
           severity: warning
+          service: "{{ $labels.name }}"
         annotations:
-          summary: "Container high CPU usage (container {{ $labels.name }})"
-          description: "Container CPU usage is > 80%\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+          summary: "⚠️ Container CPU acima de 80% - {{ $labels.name }}"
+          description: |
+            Container: {{ $labels.name }}
+            CPU Usage: {{ $value | humanize }}%
+            Possível processamento pesado ou leak de CPU
 
       - alert: ContainerHighMemoryUsage
-        expr: sum by (name) (container_memory_usage_bytes{name!=""}) / sum by (name) (container_spec_memory_limit_bytes{name!=""}) * 100 > 80
+        expr: |
+          (sum by (name) (container_memory_usage_bytes{name!=""}) / sum by (name) (container_spec_memory_limit_bytes{name!=""}) * 100) > 85
         for: 5m
         labels:
           severity: warning
+          service: "{{ $labels.name }}"
         annotations:
-          summary: "Container high memory usage (container {{ $labels.name }})"
-          description: "Container memory usage is > 80%\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+          summary: "⚠️ Container Memória acima de 85% - {{ $labels.name }}"
+          description: |
+            Container: {{ $labels.name }}
+            Memory Usage: {{ $value | humanize }}%
+            Memory Limit: {{ (sum by (name) (container_spec_memory_limit_bytes{name~"{{ $labels.name }}"}) / 1024 / 1024 / 1024) | humanize }}GB
+            Risco de OOM kill
 
+      - alert: ContainerCriticalMemoryUsage
+        expr: |
+          (sum by (name) (container_memory_usage_bytes{name!=""}) / sum by (name) (container_spec_memory_limit_bytes{name!=""}) * 100) > 95
+        for: 1m
+        labels:
+          severity: critical
+          service: "{{ $labels.name }}"
+        annotations:
+          summary: "🔴 Container Memória CRÍTICA - {{ $labels.name }}"
+          description: |
+            Container: {{ $labels.name }}
+            Memory Usage: {{ $value | humanize }}%
+            Container pode ser terminado por OOM
+
+      - alert: ContainerHighNetworkTraffic
+        expr: |
+          (sum by (name) (rate(container_network_receive_bytes_total[5m])) + sum by (name) (rate(container_network_transmit_bytes_total[5m]))) > 104857600
+        for: 5m
+        labels:
+          severity: warning
+          service: "{{ $labels.name }}"
+        annotations:
+          summary: "⚠️ Container Traffic alto - {{ $labels.name }}"
+          description: |
+            Container: {{ $labels.name }}
+            Network Traffic: {{ $value | humanize }}B/s
+            Possível data exfiltration ou backup em andamento
+
+  # ===================================================================
+  # APPLICATION ALERTS - Alertas de aplicações
+  # ===================================================================
   - name: ApplicationAlerts
+    interval: 30s
     rules:
       - alert: HighLatency
-        expr: histogram_quantile(0.99, sum by (le, service_name) (rate(duration_seconds_bucket[5m]))) > 1
+        expr: |
+          histogram_quantile(0.95, sum by (le, service_name) (rate(duration_seconds_bucket{job="flask-app"}[5m]))) > 1
         for: 5m
         labels:
           severity: warning
+          service: "{{ $labels.service_name }}"
         annotations:
-          summary: "High p99 latency on {{ $labels.service_name }}"
-          description: "99th percentile latency is over 1s\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+          summary: "⚠️ Latência alta em {{ $labels.service_name }}"
+          description: |
+            P95 Latency: {{ $value | humanize }}s
+            Service: {{ $labels.service_name }}
+            Possível slowdown ou gargalo
+
+      - alert: HighErrorRate
+        expr: |
+          (sum by (service_name) (rate(requests_total{status=~"5.."}[5m])) / sum by (service_name) (rate(requests_total[5m])) * 100) > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: "{{ $labels.service_name }}"
+        annotations:
+          summary: "⚠️ Taxa de erro alta em {{ $labels.service_name }}"
+          description: |
+            Error Rate: {{ $value | humanize }}%
+            Service: {{ $labels.service_name }}
+            Possível problema na aplicação
+
+      - alert: CriticalErrorRate
+        expr: |
+          (sum by (service_name) (rate(requests_total{status=~"5.."}[5m])) / sum by (service_name) (rate(requests_total[5m])) * 100) > 20
+        for: 2m
+        labels:
+          severity: critical
+          service: "{{ $labels.service_name }}"
+        annotations:
+          summary: "🔴 Taxa de erro CRÍTICA em {{ $labels.service_name }}"
+          description: |
+            Error Rate: {{ $value | humanize }}%
+            Service: {{ $labels.service_name }}
+            Serviço pode estar down ou com problema grave
+
+  # ===================================================================
+  # ALERTMANAGER & MONITORING STACK HEALTH
+  # ===================================================================
+  - name: MonitoringStackHealth
+    interval: 30s
+    rules:
+      - alert: PrometheusDown
+        expr: |
+          up{job="mimir"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: "monitoring"
+        annotations:
+          summary: "🔴 Prometheus (Mimir) está DOWN"
+          description: |
+            Mimir não está respondendo
+            Stack de monitoramento comprometida
+
+      - alert: LokiDown
+        expr: |
+          up{job="loki"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: "monitoring"
+        annotations:
+          summary: "🔴 Loki está DOWN"
+          description: |
+            Loki não está respondendo
+            Coleta de logs está comprometida
+
+      - alert: TempoDown
+        expr: |
+          up{job="tempo"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: "monitoring"
+        annotations:
+          summary: "🔴 Tempo está DOWN"
+          description: |
+            Tempo não está respondendo
+            Coleta de traces está comprometida
+
+      - alert: AlertmanagerDown
+        expr: |
+          up{job="alertmanager"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: "monitoring"
+        annotations:
+          summary: "🔴 Alertmanager está DOWN"
+          description: |
+            Alertmanager não está respondendo
+            Alertas não podem ser enviados

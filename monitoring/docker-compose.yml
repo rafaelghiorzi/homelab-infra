@@ -1,19 +1,40 @@
+version: '3.8'
+
 services:
+  # ===================================================================
+  # GRAFANA - Interface visual
+  # ===================================================================
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:11.0.0
     container_name: monitoring_grafana
     restart: unless-stopped
     ports:
       - "3000:3000"
     volumes:
-      - /opt/homelab/data/monitoring/grafana:/var/lib/grafana
+      - grafana_data:/var/lib/grafana
       - ./config/grafana/provisioning:/etc/grafana/provisioning
+      - ./config/grafana/dashboards:/etc/grafana/provisioning/dashboards
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_USER=admin
       - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_USERS_AUTO_ASSIGN_ORG_ROLE=Viewer
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel
+      - GF_LOG_LEVEL=info
+    networks:
+      - monitoring
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
+  # ===================================================================
+  # LOKI - Log aggregation
+  # ===================================================================
   loki:
-    image: grafana/loki:latest
+    image: grafana/loki:3.0.0
     container_name: monitoring_loki
     restart: unless-stopped
     ports:
@@ -21,10 +42,23 @@ services:
     command: -config.file=/etc/loki/loki-config.yaml
     volumes:
       - ./config/loki/loki-config.yaml:/etc/loki/loki-config.yaml
-      - /opt/homelab/data/monitoring/loki:/opt/homelab/data/monitoring/loki
+      - loki_data:/loki
+    environment:
+      - LOKI_CONFIG_FILE=/etc/loki/loki-config.yaml
+    networks:
+      - monitoring
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3100/ready"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
+  # ===================================================================
+  # MIMIR - Metrics storage (Prometheus compatible)
+  # ===================================================================
   mimir:
-    image: grafana/mimir:latest
+    image: grafana/mimir:2.10.0
     container_name: monitoring_mimir
     restart: unless-stopped
     ports:
@@ -32,42 +66,115 @@ services:
     command: -config.file=/etc/mimir/mimir-config.yaml
     volumes:
       - ./config/mimir/mimir-config.yaml:/etc/mimir/mimir-config.yaml
-      - ./config/mimir/alerting-rules.yaml:/opt/homelab/monitoring/config/mimir/rules/anonymous/alerting-rules.yaml
-      - /opt/homelab/data/monitoring/mimir:/opt/homelab/data/monitoring/mimir
+      - ./config/mimir/alerting-rules.yaml:/etc/mimir/rules/alerting-rules.yaml
+      - mimir_data:/mimir
+    environment:
+      - MIMIR_CONFIG_FILE=/etc/mimir/mimir-config.yaml
+    networks:
+      - monitoring
+    depends_on:
+      alertmanager:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9009/-/ready"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
+  # ===================================================================
+  # TEMPO - Distributed tracing
+  # ===================================================================
   tempo:
-    image: grafana/tempo:latest
+    image: grafana/tempo:2.3.0
     container_name: monitoring_tempo
     restart: unless-stopped
     ports:
       - "3200:3200"
-      - "4317:4317"
-      - "4318:4318"
+      - "4317:4317"  # OTLP gRPC
+      - "4318:4318"  # OTLP HTTP
     command: -config.file=/etc/tempo/tempo-config.yaml
     volumes:
       - ./config/tempo/tempo-config.yaml:/etc/tempo/tempo-config.yaml
-      - /opt/homelab/data/monitoring/tempo:/opt/homelab/data/monitoring/tempo
+      - tempo_data:/var/tempo
+    networks:
+      - monitoring
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3200/ready"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
+  # ===================================================================
+  # ALERTMANAGER - Alert routing and notifications
+  # ===================================================================
   alertmanager:
-    image: prom/alertmanager:latest
+    image: prom/alertmanager:v0.27.0
     container_name: monitoring_alertmanager
     restart: unless-stopped
     ports:
       - "9093:9093"
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
     volumes:
       - ./config/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+      - alertmanager_data:/alertmanager
+    networks:
+      - monitoring
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9093/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
+  # ===================================================================
+  # ALLOY - Metrics, logs, traces collector
+  # ===================================================================
   alloy:
-    image: grafana/alloy:latest
+    image: grafana/alloy:v1.6.1
     container_name: monitoring_alloy
     restart: unless-stopped
     ports:
-      - "12345:12345"
+      - "12345:12345"  # Alloy UI
+      - "4317:4317"    # OTLP gRPC receiver
+      - "4318:4318"    # OTLP HTTP receiver
     command: run --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy
     volumes:
       - ./config/alloy/config.alloy:/etc/alloy/config.alloy
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock:ro
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
-      - /:/host/root:ro,rslave
+      - /:host/root:ro,rslave
+      - alloy_data:/var/lib/alloy/data
+    environment:
+      - ALLOY_ENABLE_LOGGING=true
     user: root
+    networks:
+      - monitoring
+    depends_on:
+      loki:
+        condition: service_healthy
+      mimir:
+        condition: service_healthy
+      tempo:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:12345/ready"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  monitoring:
+    driver: bridge
+
+volumes:
+  grafana_data:
+  loki_data:
+  mimir_data:
+  tempo_data:
+  alertmanager_data:
+  alloy_data:
