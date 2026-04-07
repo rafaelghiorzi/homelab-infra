@@ -1,0 +1,113 @@
+// Host Metrics Scraper
+prometheus.exporter.unix "host" {
+  procfs_path = "/host/proc"
+  sysfs_path  = "/host/sys"
+  rootfs_path = "/host/root"
+}
+
+prometheus.scrape "host" {
+  targets    = prometheus.exporter.unix.host.targets
+  forward_to = [prometheus.remote_write.mimir.receiver]
+}
+
+// Container Metrics Scraper
+prometheus.exporter.cadvisor "containers" {
+  docker_host = "unix:///var/run/docker.sock"
+}
+
+prometheus.scrape "containers" {
+  targets    = prometheus.exporter.cadvisor.containers.targets
+  forward_to = [prometheus.remote_write.mimir.receiver]
+}
+
+// Metrics Remote Write to Mimir
+prometheus.remote_write "mimir" {
+  endpoint {
+    url = "http://mimir:9009/api/v1/push"
+  }
+}
+
+// Docker Log Discovery
+discovery.docker "linux" {
+  host = "unix:///var/run/docker.sock"
+}
+
+// Docker Log Scraper
+loki.source.docker "logs" {
+  host       = "unix:///var/run/docker.sock"
+  targets    = discovery.docker.linux.targets
+  forward_to = [loki.process.filter_logs.receiver]
+}
+
+// Log Processing and Filtering (WARN and above)
+loki.process "filter_logs" {
+  forward_to = [loki.write.loki.receiver]
+
+  // Extract level from common formats (json, logfmt, etc.)
+  stage.json {
+    expressions = { "level" = "level", "lvl" = "lvl", "severity" = "severity" }
+  }
+
+  stage.logfmt {
+    mapping = { "level" = "", "lvl" = "", "severity" = "" }
+  }
+
+  // Promote extracted fields to labels for the match stage
+  stage.labels {
+    values = {
+      "level"    = "level",
+      "lvl"      = "lvl",
+      "severity" = "severity",
+    }
+  }
+
+  // Drop INFO and DEBUG logs by checking common level labels
+  stage.match {
+    selector = "{level=~\"(?i)info|debug|dbug\"}"
+    action   = "drop"
+  }
+  stage.match {
+    selector = "{lvl=~\"(?i)info|debug|dbug\"}"
+    action   = "drop"
+  }
+  stage.match {
+    selector = "{severity=~\"(?i)info|debug|dbug\"}"
+    action   = "drop"
+  }
+}
+
+// Log Write to Loki
+loki.write "loki" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}
+
+// OpenTelemetry Receiver (for Traces, Metrics, Logs from apps)
+otelcol.receiver.otlp "default" {
+  http {}
+  grpc {}
+
+  output {
+    metrics = [otelcol.exporter.prometheus.mimir.input]
+    logs    = [otelcol.exporter.loki.loki.input]
+    traces  = [otelcol.exporter.otlp.tempo.input]
+  }
+}
+
+otelcol.exporter.prometheus "mimir" {
+  forward_to = [prometheus.remote_write.mimir.receiver]
+}
+
+otelcol.exporter.loki "loki" {
+  forward_to = [loki.write.loki.receiver]
+}
+
+otelcol.exporter.otlp "tempo" {
+  client {
+    endpoint = "tempo:4317"
+    tls {
+      insecure = true
+    }
+  }
+}
