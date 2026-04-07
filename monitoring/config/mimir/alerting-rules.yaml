@@ -1,0 +1,51 @@
+groups:
+  - name: HostAlerts
+    rules:
+      - alert: HostHighCpuUsage
+        expr: 100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Host high CPU usage (instance {{ $labels.instance }})"
+          description: "CPU usage is > 80%\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+
+      - alert: HostHighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Host high memory usage (instance {{ $labels.instance }})"
+          description: "Memory usage is > 80%\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+
+  - name: ContainerAlerts
+    rules:
+      - alert: ContainerKilled
+        expr: time() - container_last_seen > 60
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Container killed (container {{ $labels.name }})"
+          description: "A container has disappeared\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+
+      - alert: ContainerHighCpuUsage
+        expr: sum by (name) (rate(container_cpu_usage_seconds_total{name!=""}[5m])) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container high CPU usage (container {{ $labels.name }})"
+          description: "Container CPU usage is > 80%\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+
+  - name: ApplicationAlerts
+    rules:
+      - alert: HighLatency
+        expr: histogram_quantile(0.99, sum by (le, service_name) (rate(duration_seconds_bucket[5m]))) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High p99 latency on {{ $labels.service_name }}"
+          description: "99th percentile latency is over 1s\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"

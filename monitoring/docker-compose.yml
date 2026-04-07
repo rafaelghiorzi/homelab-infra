@@ -1,0 +1,73 @@
+services:
+  grafana:
+    image: grafana/grafana:latest
+    container_name: monitoring_grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - /opt/homelab/data/monitoring/grafana:/var/lib/grafana
+      - ./config/grafana/provisioning:/etc/grafana/provisioning
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+
+  loki:
+    image: grafana/loki:latest
+    container_name: monitoring_loki
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/loki-config.yaml
+    volumes:
+      - ./config/loki/loki-config.yaml:/etc/loki/loki-config.yaml
+      - /opt/homelab/data/monitoring/loki:/tmp/loki
+
+  mimir:
+    image: grafana/mimir:latest
+    container_name: monitoring_mimir
+    restart: unless-stopped
+    ports:
+      - "9009:9009"
+    command: -config.file=/etc/mimir/mimir-config.yaml
+    volumes:
+      - ./config/mimir/mimir-config.yaml:/etc/mimir/mimir-config.yaml
+      - ./config/mimir/alerting-rules.yaml:/etc/mimir/rules/anonymous/alerting-rules.yaml
+      - /opt/homelab/data/monitoring/mimir:/tmp/mimir
+
+  tempo:
+    image: grafana/tempo:latest
+    container_name: monitoring_tempo
+    restart: unless-stopped
+    ports:
+      - "3200:3200"
+      - "4317:4317"
+      - "4318:4318"
+    command: -config.file=/etc/tempo/tempo-config.yaml
+    volumes:
+      - ./config/tempo/tempo-config.yaml:/etc/tempo/tempo-config.yaml
+      - /opt/homelab/data/monitoring/tempo:/tmp/tempo
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: monitoring_alertmanager
+    restart: unless-stopped
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./config/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+
+  alloy:
+    image: grafana/alloy:latest
+    container_name: monitoring_alloy
+    restart: unless-stopped
+    ports:
+      - "12345:12345"
+    command: run --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy
+    volumes:
+      - ./config/alloy/config.alloy:/etc/alloy/config.alloy
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/host/root:ro,rslave
+    user: root
