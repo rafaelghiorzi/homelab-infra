@@ -68,20 +68,3 @@ jobs:
           docker compose \
             -f /opt/homelab/repo/apps/flask-app/docker-compose.yml \
             up -d
-
-      - name: Deploy Monitoring Stack
-        run: |
-          echo "Deploying Monitoring Stack"
-          docker compose \
-            -f /opt/homelab/repo/monitoring/docker-compose.yml \
-            up -d
-
-
-  test:
-    runs-on: self-hosted
-    needs: deploy
-    steps:
-      - name: Running test
-        run: |
-          echo "Running LGTM testing"
-          bash /opt/homelab/repo/monitoring/test.sh
