@@ -21,7 +21,7 @@ jobs:
       - name: Register Cloudflare DNS Routes
         run: |
           echo "Lendo hostnames do config.yml..."
-          CONFIG_PATH="/opt/homelab/repo/cloudflare/config.yml"
+          CONFIG_PATH="/opt/homelab/homelab-infra/cloudflare/config.yml"
 
           grep "hostname:" $CONFIG_PATH | sed 's/.*hostname: //' | while read -r domain; do
             if [ -n "$domain" ]; then
@@ -42,7 +42,7 @@ jobs:
         run: |
           echo "Deploying Immich"
           docker compose \
-            -f /opt/homelab/repo/apps/immich/docker-compose.yml \
+            -f /opt/homelab/homelab-infra/apps/immich/docker-compose.yml \
             --env-file /opt/homelab/secrets/.env \
             up -d
 
@@ -50,7 +50,7 @@ jobs:
         run: |
           echo "Deploying NextCloud"
           docker compose \
-            -f /opt/homelab/repo/apps/nextcloud/docker-compose.yml \
+            -f /opt/homelab/homelab-infra/apps/nextcloud/docker-compose.yml \
             --env-file /opt/homelab/secrets/.env \
             up -d
 
@@ -58,5 +58,5 @@ jobs:
         run: |
           echo "Deploying Flask App"
           docker compose \
-            -f /opt/homelab/repo/apps/flask-app/docker-compose.yml \
+            -f /opt/homelab/homelab-infra/apps/flask-app/docker-compose.yml \
             up -d
