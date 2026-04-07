@@ -12,8 +12,7 @@ jobs:
 
       - name: Sync Files
         run: |
-          mkdir -p /opt/homelab/repo
-          rsync -rtv --delete ./ /opt/homelab/repo/
+          rsync -rtv --delete ./ /opt/homelab/homelab-infra/
 
   sync-cloudflare:
     runs-on: self-hosted
