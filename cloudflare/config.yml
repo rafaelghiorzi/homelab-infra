@@ -1,20 +1,20 @@
-tunnel: 5220d09b-563e-4995-87d3-3ebd39d13110
-credentials-file: /etc/cloudflared/tunnels/homelab-ghiorzi.json
+tunnel: 40427a67-714d-4d68-979c-d2662ae8e2dd
+credentials-file: /home/dias/.cloudflared/40427a67-714d-4d68-979c-d2662ae8e2dd.json
 
 ingress:
   - hostname: fotos.rafaelghiorzi.org
-    service: http://192.168.0.185:2283
+    service: http://192.168.0.127:2283
 
   - hostname: drive.rafaelghiorzi.org
-    service: http://192.168.0.185:8080
+    service: http://192.168.0.127:8080
 
   - hostname: nginx.rafaelghiorzi.org
-    service: http://192.168.0.185:8000
+    service: http://192.168.0.127:8000
 
   - hostname: flask.rafaelghiorzi.org
-    service: http://192.168.0.185:5001
+    service: http://192.168.0.127:5001
 
   - hostname: monitoring.rafaelghiorzi.org
-    service: http://192.168.0.185:3000
+    service: http://192.168.0.127:3000
 
   - service: http_status:404

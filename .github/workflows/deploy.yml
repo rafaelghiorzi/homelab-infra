@@ -55,13 +55,6 @@ jobs:
             --env-file /opt/homelab/secrets/.env \
             up -d
 
-      - name: Deploy Nginx
-        run: |
-          echo "Deploying Nginx"
-          docker compose \
-            -f /opt/homelab/repo/apps/nginx/docker-compose.yml \
-            up -d
-
       - name: Deploy Flask App
         run: |
           echo "Deploying Flask App"
