@@ -79,6 +79,7 @@ jobs:
 
   test:
     runs-on: self-hosted
+    needs: deploy
     steps:
       - name: Running test
         run: |
