@@ -1,4 +1,3 @@
-version: '3.8'
 
 services:
   # ===================================================================
@@ -146,7 +145,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
-      - /:host/root:ro,rslave
+      - /:/host/root:ro,rslave
       - alloy_data:/var/lib/alloy/data
     environment:
       - ALLOY_ENABLE_LOGGING=true
