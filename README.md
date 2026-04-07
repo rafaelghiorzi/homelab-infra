@@ -24,7 +24,7 @@ The project follows a specific hierarchy to ensure easy backups and configuratio
 - `/opt/homelab/data/`: Persistent application data (e.g., Nextcloud files, Immich media, Grafana DB).
 - `/opt/homelab/secrets/`: Sensitive credentials and `.env` files (excluded from Git).
 
-##How it Works
+## How it Works
 
 1. **Deployment**: When code is pushed to the `main` branch, a GitHub self-hosted runner:
    - Syncs all repository files to `/opt/homelab/repo/` using `rsync`.
@@ -48,7 +48,7 @@ The system is configured to alert for:
 - High application latency (p99 > 1s).
 - Critical system errors in logs.
 
-# TODO
+## TODO
 
 There are still much to go over in this project, so I created a list of things that still need completion
 
