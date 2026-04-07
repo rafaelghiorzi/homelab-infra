@@ -32,7 +32,7 @@ services:
     command: -config.file=/etc/mimir/mimir-config.yaml
     volumes:
       - ./config/mimir/mimir-config.yaml:/etc/mimir/mimir-config.yaml
-      - ./config/mimir/alerting-rules.yaml:/etc/mimir/rules/anonymous/alerting-rules.yaml
+      - ./config/mimir/alerting-rules.yaml:/opt/homelab/monitoring/config/mimir/rules/anonymous/alerting-rules.yaml
       - /opt/homelab/data/monitoring/mimir:/opt/homelab/data/monitoring/mimir
 
   tempo:

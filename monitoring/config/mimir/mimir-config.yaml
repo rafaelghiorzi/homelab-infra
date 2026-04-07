@@ -40,4 +40,4 @@ ruler:
   storage:
     type: local
     local:
-      directory: /etc/mimir/rules
+      directory: /opt/homelab/monitoring/config/mimir/rules
