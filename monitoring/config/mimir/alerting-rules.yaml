@@ -39,6 +39,15 @@ groups:
           summary: "Container high CPU usage (container {{ $labels.name }})"
           description: "Container CPU usage is > 80%\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
 
+      - alert: ContainerHighMemoryUsage
+        expr: sum by (name) (container_memory_usage_bytes{name!=""}) / sum by (name) (container_spec_memory_limit_bytes{name!=""}) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container high memory usage (container {{ $labels.name }})"
+          description: "Container memory usage is > 80%\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+
   - name: ApplicationAlerts
     rules:
       - alert: HighLatency
