@@ -21,7 +21,7 @@ services:
     command: -config.file=/etc/loki/loki-config.yaml
     volumes:
       - ./config/loki/loki-config.yaml:/etc/loki/loki-config.yaml
-      - /opt/homelab/data/monitoring/loki:/var/loki
+      - /opt/homelab/data/monitoring/loki:/opt/homelab/data/monitoring/loki
 
   mimir:
     image: grafana/mimir:latest
@@ -33,7 +33,7 @@ services:
     volumes:
       - ./config/mimir/mimir-config.yaml:/etc/mimir/mimir-config.yaml
       - ./config/mimir/alerting-rules.yaml:/etc/mimir/rules/anonymous/alerting-rules.yaml
-      - /opt/homelab/data/monitoring/mimir:/var/mimir
+      - /opt/homelab/data/monitoring/mimir:/opt/homelab/data/monitoring/mimir
 
   tempo:
     image: grafana/tempo:latest
@@ -46,7 +46,7 @@ services:
     command: -config.file=/etc/tempo/tempo-config.yaml
     volumes:
       - ./config/tempo/tempo-config.yaml:/etc/tempo/tempo-config.yaml
-      - /opt/homelab/data/monitoring/tempo:/var/tempo
+      - /opt/homelab/data/monitoring/tempo:/opt/homelab/data/monitoring/tempo
 
   alertmanager:
     image: prom/alertmanager:latest

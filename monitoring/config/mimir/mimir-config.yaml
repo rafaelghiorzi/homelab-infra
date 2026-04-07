@@ -8,17 +8,17 @@ common:
   storage:
     backend: filesystem
     filesystem:
-      dir: /var/mimir
+      dir: /opt/homelab/data/monitoring/mimir
 
 blocks_storage:
   storage_backend: filesystem
   filesystem:
-    dir: /var/mimir/blocks
+    dir: /opt/homelab/data/monitoring/mimir/blocks
   tsdb:
-    dir: /var/mimir/tsdb
+    dir: /opt/homelab/data/monitoring/mimir/tsdb
 
 compactor:
-  data_dir: /var/mimir/compactor
+  data_dir: /opt/homelab/data/monitoring/mimir/compactor
 
 distributor:
   ring:
@@ -34,7 +34,7 @@ ingester:
     replication_factor: 1
 
 ruler:
-  rule_path: /var/mimir/rules
+  rule_path: /opt/homelab/data/monitoring/mimir/rules
   alertmanager_url: http://alertmanager:9093
   external_url: http://mimir:9009
   storage:

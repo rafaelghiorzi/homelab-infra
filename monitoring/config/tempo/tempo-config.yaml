@@ -19,7 +19,7 @@ storage:
   trace:
     backend: local
     local:
-      path: /var/tempo/traces
+      path: /opt/homelab/data/monitoring/tempo/traces
 
 overrides:
   metrics_generator_processors: [service-graphs, span-metrics]
