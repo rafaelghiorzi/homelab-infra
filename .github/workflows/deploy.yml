@@ -60,3 +60,10 @@ jobs:
           docker compose \
             -f /opt/homelab/homelab-infra/apps/flask-app/docker-compose.yml \
             up -d
+
+      - name: Deploy Monitoring
+        run: |
+          echo "Deploying monitoring"
+          docker compose \
+            -f /opt/homelab/homelab-infra/monitoring/docker-compose.yml \
+            up -d
