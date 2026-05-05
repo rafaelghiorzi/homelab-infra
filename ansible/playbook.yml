@@ -1,0 +1,51 @@
+---
+- name: Ping and check connectivity
+  hosts: admin
+  become: true
+  tasks:
+    - name: Ping all hosts
+      ansible.builtin.ping:
+
+    - name: Print message
+      ansible.builtin.debug:
+        msg: "Hello from {{ inventory_hostname }}!"
+
+- name: Setup Linux basics
+  hosts: homelab
+  become: true
+  tasks:
+    - name: Update and upgrade packages
+      ansible.builtin.apt:
+        upgrade: safe
+        update_cache: true
+        autoclean: true
+
+- name: Setup Firewall with UFW
+  hosts: homelab
+  become: true
+  tasks:
+    - name: Enable UFW
+      ansible.builtin.ufw:
+        state: enabled
+
+    - name: Set default policy for outgoing traffic
+      ansible.builtin.ufw:
+        direction: outgoing
+        policy: allow
+
+    - name: Set default policy for incoming traffic
+      ansible.builtin.ufw:
+        direction: incoming
+        policy: deny
+
+    - name: Allow SSH
+      ansible.builtin.ufw:
+        rule: allow
+        port: ssh
+
+    - name: Allow HTTP
+      ansible.builtin.ufw:
+        rule: allow
+        port: http
+
+      

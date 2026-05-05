@@ -1,0 +1,44 @@
+admin:
+  hosts:
+    admin1:
+      ansible_host: 0.0.0.0
+      ansible_connection: local
+      http_port: 80
+
+media:
+  hosts:
+    media1:
+      ansible_host: 192.168.0.10
+    media2:
+      ansible_host: 192.168.0.9
+
+network:
+  hosts:
+    network1:
+      ansible_host: 192.168.0.8
+    network2:
+      ansible_host: 192.168.0.7
+
+monitoring:
+  hosts:
+    monitoring1:
+      ansible_host: 192.168.0.6
+    monitoring2:
+      ansible_host: 192.168.0.5
+  vars:
+    ansible_user: monitoring_user
+
+storage:
+  hosts:
+    storage1:
+      ansible_host: 192.168.0.4
+    storage2:
+      ansible_host: 192.168.0.3
+
+homelab:
+  children:
+    admin:
+    media:
+    network:
+    monitoring:
+    storage:
