@@ -20,6 +20,12 @@ ansible --version
 ansible-lint --version
 ```
 
+For Docker installation, you can add the Ansible Docker role for easy installation and management of Docker in your hosts:
+
+```bash
+ansible-galaxy install geerlingguy.docker
+```
+
 ## Creating Ansible inventory
 
 Here you can follow to the inventory file to create your own inventory. I've created a simple one that separates the hosts in working groups, but this can be changed however you'd like.
@@ -40,4 +46,10 @@ To run the playbook, you can use the following command:
 
 ```bash
 ansible-playbook -i inventory.yaml playbook.yaml
+```
+
+or, if no ssh keys are set up, you can use:
+
+```bash
+ansible-playbook -i inventory.yml playbook.yml --ask-pass --ask-become-pass
 ```
