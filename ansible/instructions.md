@@ -41,5 +41,3 @@ To run the playbook, you can use the following command:
 ```bash
 ansible-playbook -i inventory.yaml playbook.yaml
 ```
-
-
