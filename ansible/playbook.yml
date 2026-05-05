@@ -69,13 +69,3 @@
   become: true
   roles:
     - geerlingguy.docker
-  tasks:
-    - name: Ensure docker group exists
-      ansible.builtin.apt:
-        name: docker
-        state: present
-    - name: Add user to docker group
-      user:
-        name: "{{ ansible_user }}"
-        groups: docker
-        append: true
