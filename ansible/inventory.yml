@@ -1,0 +1,4 @@
+homelab:
+  hosts:
+    hitmon:
+      ansible_host: 192.168.0.178

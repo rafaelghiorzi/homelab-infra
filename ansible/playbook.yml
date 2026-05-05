@@ -1,0 +1,81 @@
+---
+- name: Ping and check connectivity
+  hosts: homelab
+  tasks:
+    - name: Ping all hosts
+      ansible.builtin.ping:
+
+    - name: Print message
+      ansible.builtin.debug:
+        msg: "Hello from {{ inventory_hostname }}!"
+
+- name: Setup Linux basics
+  hosts: homelab
+  become: true
+  tasks:
+    - name: Update and upgrade packages
+      ansible.builtin.apt:
+        upgrade: safe
+        update_cache: true
+        autoclean: true
+    - name: Install SSH server
+      ansible.builtin.apt:
+        name: openssh-server
+        state: present
+        update_cache: true
+    - name: Ensure SSH is enabled and running
+      ansible.builtin.service:
+        name: ssh
+        state: started
+        enabled: true
+    - name: Install Git
+      ansible.builtin.apt:
+        name: git
+        state: present
+
+- name: Setup Firewall with UFW
+  hosts: homelab
+  become: true
+  tasks:
+    - name: Rate Limit SSH (Implicitly allows SSH)
+      community.general.ufw:
+        rule: limit
+        port: 22
+        proto: tcp
+
+    - name: Allow nginx HTTPS
+      community.general.ufw:
+        rule: allow
+        port: 443
+        proto: tcp
+
+    - name: Set default policies
+      community.general.ufw:
+        direction: incoming
+        policy: deny
+
+    - name: Set default policies
+      community.general.ufw:
+        direction: outgoing
+        policy: allow
+
+        proto: tcp
+    - name: Enable UFW
+      community.general.ufw:
+        state: enabled
+
+- name: Setup Docker
+  hosts: homelab
+  become: true
+  roles:
+    - geerlingguy.docker
+  tasks:
+    - name: Ensure docker group exists
+      ansible.builtin.apt:
+        name: docker
+        state: present
+    - name: Add user to docker group
+      user:
+        name: "{{ ansible_user }}"
+        groups: docker
+        append: true
