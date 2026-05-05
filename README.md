@@ -56,5 +56,5 @@ There are still much to go over in this project, so I created a list of things t
 - Add Nginx reverse proxy for port routing (if necessary, as cloudflare does this already)
 - Add more security measures, stronger firewall
 - Add ansible playbooks for environment reprodutibility
-- Fix monitoring logic, as it is yet not fully working
+- Fix workflow to only deploy when a new tag is added
 - Add testing workflow to GitHub Actions
