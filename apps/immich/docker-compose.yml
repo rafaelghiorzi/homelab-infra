@@ -30,6 +30,9 @@ services:
     restart: always
     healthcheck:
       disable: false
+    networks:
+      - storage
+      - proxy
 
   immich-machine-learning:
     container_name: immich_machine_learning
@@ -46,6 +49,8 @@ services:
     restart: always
     healthcheck:
       disable: false
+    networks:
+      - storage
 
   redis:
     container_name: immich_redis
@@ -53,6 +58,8 @@ services:
     healthcheck:
       test: redis-cli ping || exit 1
     restart: always
+    networks:
+      - storage
 
   database:
     container_name: immich_postgres
@@ -71,7 +78,17 @@ services:
     restart: always
     healthcheck:
       disable: false
+    networks:
+      - storage
 
 volumes:
   model-cache:
+
+networks:
+  storage:
+    name: storage
+    driver: bridge
+  proxy:
+    external: true
+    name: proxy
 

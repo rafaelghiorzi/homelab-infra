@@ -1,0 +1,25 @@
+services:
+  portainer:
+    container_name: portainer
+    image: portainer/portainer-ce:sts
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    ports:
+      - 9443:9443
+    networks:
+      - management
+      - proxy
+
+volumes:
+  portainer_data:
+    name: portainer_data
+
+networks:
+  management:
+    name: management
+    driver: bridge
+  proxy:
+    external: true
+    name: proxy

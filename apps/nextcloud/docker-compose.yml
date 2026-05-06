@@ -8,10 +8,14 @@ services:
       - PGDATA=/var/lib/postgresql/data
     env_file:
       - /opt/homelab/secrets/.env
+    networks:
+      - storage
 
   redis:
     image: redis:alpine
     restart: unless-stopped
+    networks:
+      - storage
 
   app:
     image: nextcloud:apache
@@ -29,6 +33,9 @@ services:
     depends_on:
       - db
       - redis
+    networks:
+      - storage
+      - proxy
 
   cron:
     image: nextcloud:apache
@@ -40,6 +47,16 @@ services:
     depends_on:
       - db
       - redis
+    networks:
+      - storage
 
 volumes:
   nextcloud_app:
+
+networks:
+  storage:
+    name: storage
+    driver: bridge
+  proxy:
+    external: true
+    name: proxy

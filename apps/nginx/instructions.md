@@ -1,0 +1,3 @@
+This nginx proxy manager serves SSL certificates for my domain and routes traffic to the appropriate services running on my machine. It also provides a nice web interface for managing the proxy settings and SSL certificates.
+
+The cloudflare tunnel is already set up and running, so I just need to point it to the different applications. It should be noted that the hostname is the container name always
