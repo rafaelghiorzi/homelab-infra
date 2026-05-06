@@ -158,3 +158,23 @@ Docker Hosts:
 - 1 × Bitwarden (if using LXC or VM)
 
 Total: 5–6 Docker environments
+
+## Thinking about hardware
+
+After my research and thought process, I came to the conclusion that for all these processes and applications, I would need a decent enough computer to run without bottlenecks and constant lagging. So, here's the recommended bottom line computer for this operation:
+
+```
+Processor: Intel i5-12400 or better (with iGPU)
+RAM: 32GB DDR4 3200MHz or better (16GB could be viable, but with great performance reduction)
+SSD: NVMe 512GB (for OS + VMs + DBs+ cache)
+HDD: 2x2TB or better (For object, media and bulk storage. Ran with ZFS mirror) 
+PSU: 400-500W 80+ Bronze or Gold
+Motherboard: Any with at least 4 Sata connections, 4 Slots RAM, 2 slots M.2
+```
+
+This is already very future proof. Could be way more with DDR5 RAM, but this a whole other level. Today, *May 2026*, this computer would cost about R$ 6000,00 with all new components.
+
+
+---
+
+Rafael Ghiorzi, 2026
